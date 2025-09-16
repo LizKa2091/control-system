@@ -1,16 +1,70 @@
-import { Table } from 'antd';
+import { useMemo, useState } from 'react';
+import { Button, Popconfirm, Space, Table } from 'antd';
+import { useCreateProject, useDeleteProject, useProjects, useUpdateProject, type Project } from '../lib/projects'
+import ProjectForm, { type ProjectFormValues } from '../components/ProjectForm'
 
 const Projects = () => {
+  const { data } = useProjects();
+  const createMutation = useCreateProject();
+  const updateMutation = useUpdateProject();
+  const deleteMutation = useDeleteProject();
+
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [editing, setEditing] = useState<Project | null>(null);
+
+  const columns = useMemo(() => [
+    { title: 'Проект', dataIndex: 'name' },
+    { title: 'Статус', dataIndex: 'status' },
+    {
+      title: 'Действия',
+      key: 'actions',
+      render: (_: unknown, record: Project) => (
+        <Space>
+          <Button size="small" onClick={() => { setEditing(record); setIsModalOpen(true) }}>Изменить</Button>
+          <Popconfirm title="Удалить проект?" okText="Да" cancelText="Нет" onConfirm={() => deleteMutation.mutate(record.id)}>
+            <Button size="small" danger loading={deleteMutation.isPending}>Удалить</Button>
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ], [deleteMutation.isPending]);
+
   return (
-    <Table
-      rowKey="id"
-      columns={[
-        { title: 'Проект', dataIndex: 'name' },
-        { title: 'Статус', dataIndex: 'status' },
-      ]}
-      dataSource={[]}
-      pagination={false}
-    />
+    <>
+      <Space style={{ marginBottom: 16 }}>
+        <Button type="primary" onClick={() => { setEditing(null); setIsModalOpen(true) }}>
+          Создать проект
+        </Button>
+      </Space>
+      <Table rowKey="id" columns={columns as any} dataSource={data ?? []} pagination={false} />
+      <ProjectForm
+        open={isModalOpen}
+        title={editing ? 'Изменить проект' : 'Создать проект'}
+        initialValues={editing ? {
+          name: editing.name,
+          status: editing.status,
+        } : undefined}
+        loading={createMutation.isPending || updateMutation.isPending}
+        onCancel={() => { setIsModalOpen(false); setEditing(null) }}
+        onSubmit={(values: ProjectFormValues) => {
+          if (editing) {
+            updateMutation.mutate({
+              id: editing.id,
+              name: values.name,
+              status: values.status,
+            }, 
+            { onSuccess: () => { setIsModalOpen(false); setEditing(null) } })
+          } 
+          else {
+            createMutation.mutate({
+              name: values.name,
+              status: values.status,
+            }, 
+            { onSuccess: () => { setIsModalOpen(false); setEditing(null) } })
+          }
+        }}
+      />
+    </>
   )
 }
 
