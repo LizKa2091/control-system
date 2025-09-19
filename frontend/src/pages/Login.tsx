@@ -1,10 +1,37 @@
-import { Button, Card, Flex, Form, Input, Typography } from 'antd';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Button, Card, Flex, Form, Input, Typography, message } from 'antd';
+import { api } from '../lib/api';
+import { useAuth } from '../context/AuthContext';
+
+interface IFormData {
+  email: string;
+  password: string;
+}
 
 const Login = () => {
   const [form] = Form.useForm();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
 
-  const onFinish = (values: unknown) => {
-    console.log('login submit', values)
+  const onFinish = async (values: IFormData) => {
+    try {
+      const { data } = await api.post('/auth/login', values);
+
+      const token: string = data?.token;
+      const user = data?.user;
+
+      if (!token) throw new Error('Токен отсутствует');
+
+      login(token, user)
+      message.success('Добро пожаловать');
+
+      const fromPath = location.state?.from?.pathname || '/dashboard'
+      navigate(fromPath, { replace: true })
+    } 
+    catch (e: any) {
+      message.error(e?.response?.data?.message || 'Не удалось войти')
+    }
   };
 
   return (
@@ -27,4 +54,4 @@ const Login = () => {
   )
 }
 
-export default Login;
+export default Login
