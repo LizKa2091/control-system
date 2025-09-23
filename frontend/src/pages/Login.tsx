@@ -1,4 +1,6 @@
+import type { FC } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Button, Card, Flex, Form, Input, Typography, message } from 'antd';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
@@ -8,8 +10,8 @@ interface IFormData {
   password: string;
 }
 
-const Login = () => {
-  const [form] = Form.useForm();
+const Login: FC = () => {
+  const [form] = Form.useForm<IFormData>();
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
@@ -26,11 +28,11 @@ const Login = () => {
       login(token, user)
       message.success('Добро пожаловать');
 
-      const fromPath = location.state?.from?.pathname || '/dashboard'
+      const fromPath = location.state?.from?.pathname || '/dashboard';
       navigate(fromPath, { replace: true })
     } 
     catch (e: any) {
-      message.error(e?.response?.data?.message || 'Не удалось войти')
+      message.error(e?.response?.data?.message || 'Не удалось войти');
     }
   };
 
@@ -48,6 +50,12 @@ const Login = () => {
           <Form.Item>
             <Button type="primary" htmlType="submit" block>Войти</Button>
           </Form.Item>
+          <Typography.Paragraph style={{ marginBottom: 0 }}>
+            Нет аккаунта? <Link to="/register">Зарегистрироваться</Link>
+          </Typography.Paragraph>
+          <Typography.Paragraph style={{ marginBottom: 0 }}>
+            Забыли пароль? <Link to="/forgot">Восстановить</Link>
+          </Typography.Paragraph>
         </Form>
       </Card>
     </Flex>
