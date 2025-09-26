@@ -1,9 +1,11 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Layout, Typography, Menu } from 'antd';
+import type { FC } from 'react';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Layout, Typography, Menu, Dropdown, Avatar, Space } from 'antd';
+import { useAuth } from '../context/AuthContext';
 
 const { Header, Content, Footer } = Layout;
 
-const MainLayout = () => {
+const MainLayout : FC = () => {
   const location = useLocation();
   const selectedKeys = [
     location.pathname.startsWith('/projects') ? 'projects'
@@ -11,6 +13,19 @@ const MainLayout = () => {
       : location.pathname.startsWith('/reports') ? 'reports'
       : 'dashboard'
   ];
+
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const userMenu = (
+    <Menu
+      items={[
+        { key: 'profile', label: <span>{user?.email}</span> },
+        { type: 'divider' as any },
+        { key: 'logout', label: 'Выйти', onClick: () => { logout(); navigate('/login'); } },
+      ]}
+    />
+  )
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -24,6 +39,12 @@ const MainLayout = () => {
           { key: 'defects', label: <Link to="/defects">Дефекты</Link> },
           { key: 'reports', label: <Link to="/reports">Отчёты</Link> },
         ]} />
+        <Dropdown overlay={userMenu} placement="bottomRight" trigger={['click']}>
+          <Space style={{ color: '#fff', cursor: 'pointer' }}>
+            <Avatar>{user?.email?.[0]?.toUpperCase() || '?'}</Avatar>
+            <span>{user?.email || 'Гость'}</span>
+          </Space>
+        </Dropdown>
       </Header>
       <Content style={{ padding: 24 }}>
         <div className="container">
@@ -37,4 +58,4 @@ const MainLayout = () => {
   )
 }
 
-export default MainLayout
+export default MainLayout;
