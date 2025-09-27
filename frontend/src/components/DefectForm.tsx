@@ -8,6 +8,8 @@ export type DefectFormValues = {
   description?: string
   projectName?: string
   priority: DefectPriority
+  assigneeId?: string
+  assigneeName?: string
   attachments?: { id: string; name: string }[]
 }
 
@@ -67,6 +69,9 @@ const DefectForm: FC<IDefectFormProps> = ({ open, initialValues, loading, onSubm
               { value: 'high', label: 'Высокий' },
             ]}
           />
+        </Form.Item>
+        <Form.Item name="assigneeName" label="Исполнитель"> 
+          <Input placeholder="Введите имя исполнителя" />
         </Form.Item>
         <Form.Item name="files" label="Вложения">
           <Upload beforeUpload={() => false} multiple>
