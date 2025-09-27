@@ -30,7 +30,6 @@ function readAll(): Defect[] {
     return JSON.parse(raw) as Defect[];
   }
 
-  // Инициализация тестовыми данными, если нет сохраненных данных
   const testData: Defect[] = [
     {
       id: '1',
@@ -100,6 +99,108 @@ function readAll(): Defect[] {
           text: 'Протечка устранена, требуется проверка',
           author: 'Козлов К.К.',
           createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()
+        }
+      ]
+    },
+    {
+      id: '4',
+      title: 'Повреждение кровли',
+      description: 'Обнаружены повреждения кровельного покрытия',
+      projectName: 'Жилой комплекс "Солнечный"',
+      priority: 'medium',
+      status: 'closed',
+      assigneeName: 'Петров П.П.',
+      createdBy: 'admin',
+      createdByName: 'Администратор',
+      createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+      updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+      attachments: [
+        { id: '4', name: 'фото_кровли.jpg' }
+      ],
+      comments: [
+        {
+          id: '4',
+          text: 'Кровля отремонтирована',
+          author: 'Петров П.П.',
+          createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
+        }
+      ]
+    },
+    {
+      id: '5',
+      title: 'Неисправность отопления',
+      description: 'Отопление в квартире 45 не работает',
+      projectName: 'Жилой комплекс "Солнечный"',
+      priority: 'high',
+      status: 'in_progress',
+      assigneeName: 'Сидоров С.С.',
+      createdBy: 'admin',
+      createdByName: 'Администратор',
+      createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+      updatedAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
+      attachments: [],
+      comments: []
+    },
+    {
+      id: '6',
+      title: 'Повреждение фасада',
+      description: 'Трещины в фасадной отделке',
+      projectName: 'Офисный центр "Бизнес-Плаза"',
+      priority: 'low',
+      status: 'new',
+      assigneeName: 'Козлов К.К.',
+      createdBy: 'admin',
+      createdByName: 'Администратор',
+      createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      updatedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      attachments: [
+        { id: '5', name: 'фото_фасада.jpg' }
+      ],
+      comments: []
+    },
+    {
+      id: '7',
+      title: 'Неисправность кондиционера',
+      description: 'Кондиционер в офисе 301 не охлаждает',
+      projectName: 'Офисный центр "Бизнес-Плаза"',
+      priority: 'medium',
+      status: 'closed',
+      assigneeName: 'Иванов И.И.',
+      createdBy: 'admin',
+      createdByName: 'Администратор',
+      createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+      updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      attachments: [],
+      comments: [
+        {
+          id: '5',
+          text: 'Кондиционер заменён',
+          author: 'Иванов И.И.',
+          createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+        }
+      ]
+    },
+    {
+      id: '8',
+      title: 'Протечка в ванной',
+      description: 'Протечка воды в ванной комнате квартиры 12',
+      projectName: 'Жилой комплекс "Солнечный"',
+      priority: 'high',
+      status: 'review',
+      assigneeName: 'Петров П.П.',
+      createdBy: 'admin',
+      createdByName: 'Администратор',
+      createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+      updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+      attachments: [
+        { id: '6', name: 'фото_протечки.jpg' }
+      ],
+      comments: [
+        {
+          id: '6',
+          text: 'Протечка устранена, ждём проверки',
+          author: 'Петров П.П.',
+          createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
         }
       ]
     }
