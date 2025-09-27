@@ -1,13 +1,28 @@
 import { useMemo, useState } from 'react';
-import { Button, Space, Table, Tag, Popconfirm, Input, Select } from 'antd';
+import { Button, Space, Table, Tag, Popconfirm, Input, Select, Card } from 'antd';
+import { SearchOutlined } from '@ant-design/icons';
 import { useAdvanceStatus, useCreateDefect, useDefects, useDeleteDefect, useUpdateDefect, type Defect } from '../lib/defects'
 import DefectForm, { type DefectFormValues } from '../components/DefectForm';
+import DefectDetail from '../components/DefectDetail';
 
 const statusToColor: Record<string, string> = {
   new: 'default',
   in_progress: 'processing',
   review: 'warning',
   closed: 'success',
+}
+
+const statusToLabel: Record<string, string> = {
+  new: 'Новый',
+  in_progress: 'В работе',
+  review: 'На проверке',
+  closed: 'Закрыт',
+}
+
+const priorityToLabel: Record<string, string> = {
+  low: 'Низкий',
+  medium: 'Средний',
+  high: 'Высокий',
 }
 
 const Defects = () => {
@@ -19,25 +34,77 @@ const Defects = () => {
 
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
   const [editing, setEditing] = useState<Defect | null>(null)
-  const [query, setQuery] = useState<string>('')
-  const [status, setStatus] = useState<string | undefined>(undefined)
-  const [priority, setPriority] = useState<string | undefined>(undefined)
+  const [viewing, setViewing] = useState<Defect | null>(null)
+  const [searchText, setSearchText] = useState<string>('')
+  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined)
+  const [priorityFilter, setPriorityFilter] = useState<string | undefined>(undefined)
+
+  const filteredData = useMemo(() => {
+    if (!data) return [];
+    
+    return data.filter(defect => {
+      const matchesSearch = !searchText || 
+        defect.title.toLowerCase().includes(searchText.toLowerCase()) ||
+        defect.description?.toLowerCase().includes(searchText.toLowerCase()) ||
+        defect.projectName?.toLowerCase().includes(searchText.toLowerCase()) ||
+        defect.assigneeName?.toLowerCase().includes(searchText.toLowerCase());
+      
+      const matchesStatus = !statusFilter || defect.status === statusFilter;
+      const matchesPriority = !priorityFilter || defect.priority === priorityFilter;
+      
+      return matchesSearch && matchesStatus && matchesPriority;
+    });
+  }, [data, searchText, statusFilter, priorityFilter]);
 
   const columns = useMemo(
     () => [
-      { title: 'Заголовок', dataIndex: 'title' },
-      { title: 'Проект', dataIndex: 'projectName' },
+      { 
+        title: 'Заголовок', 
+        dataIndex: 'title',
+        width: 200,
+        ellipsis: true,
+      },
+      { 
+        title: 'Проект', 
+        dataIndex: 'projectName',
+        width: 120,
+        ellipsis: true,
+      },
       {
         title: 'Статус',
         dataIndex: 'status',
-        render: (status: string) => <Tag color={statusToColor[status] || 'default'}>{status}</Tag>,
+        width: 120,
+        render: (status: string) => (
+          <Tag color={statusToColor[status] || 'default'}>
+            {statusToLabel[status] || status}
+          </Tag>
+        ),
       },
-      { title: 'Приоритет', dataIndex: 'priority' },
+      { 
+        title: 'Приоритет', 
+        dataIndex: 'priority',
+        width: 100,
+        render: (priority: string) => priorityToLabel[priority] || priority,
+      },
+      { 
+        title: 'Исполнитель', 
+        dataIndex: 'assigneeName',
+        width: 120,
+        ellipsis: true,
+      },
+      { 
+        title: 'Создан', 
+        dataIndex: 'createdAt',
+        width: 120,
+        render: (date: string) => new Date(date).toLocaleDateString('ru-RU'),
+      },
       {
         title: 'Действия',
         key: 'actions',
+        width: 200,
         render: (_: unknown, record: Defect) => (
           <Space>
+            <Button size="small" onClick={() => setViewing(record)}>Просмотр</Button>
             <Button size="small" onClick={() => { setEditing(record); setIsModalOpen(true) }}>Изменить</Button>
             <Button size="small" type="dashed" onClick={() => advanceMutation.mutate(record.id)} loading={advanceMutation.isPending}>Передать дальше</Button>
             <Popconfirm title="Удалить дефект?" okText="Да" cancelText="Нет" onConfirm={() => deleteMutation.mutate(record.id)}>
@@ -50,52 +117,54 @@ const Defects = () => {
     [advanceMutation.isPending, deleteMutation.isPending]
   )
 
-  const filtered = useMemo(() => {
-    const list = (data ?? []) as Defect[]
-    return list.filter(d => {
-      const matchesQuery = query
-        ? [d.title, d.description, d.projectName].some(v => (v || '').toLowerCase().includes(query.toLowerCase()))
-        : true
-      const matchesStatus = status ? d.status === status : true
-      const matchesPriority = priority ? d.priority === priority : true
-      return matchesQuery && matchesStatus && matchesPriority
-    })
-  }, [data, query, status, priority])
-
   return (
     <>
-      <Space style={{ marginBottom: 16 }} wrap>
-        <Input.Search allowClear placeholder="Поиск (заголовок, описание, проект)" style={{ width: 320 }} value={query} onChange={(e) => setQuery(e.target.value)} />
-        <Select
-          allowClear
-          placeholder="Статус"
-          style={{ width: 180 }}
-          value={status}
-          onChange={(v) => setStatus(v)}
-          options={[
-            { value: 'new', label: 'Новый' },
-            { value: 'in_progress', label: 'В работе' },
-            { value: 'review', label: 'На проверке' },
-            { value: 'closed', label: 'Закрыт' },
-          ]}
-        />
-        <Select
-          allowClear
-          placeholder="Приоритет"
-          style={{ width: 180 }}
-          value={priority}
-          onChange={(v) => setPriority(v)}
-          options={[
-            { value: 'low', label: 'Низкий' },
-            { value: 'medium', label: 'Средний' },
-            { value: 'high', label: 'Высокий' },
-          ]}
-        />
-        <Button type="primary" onClick={() => { setEditing(null); setIsModalOpen(true) }}>
-          Создать дефект
-        </Button>
-      </Space>
-      <Table rowKey="id" columns={columns as any} dataSource={filtered} pagination={{ pageSize: 10 }} />
+      <Card style={{ marginBottom: 16 }}>
+        <Space wrap style={{ width: '100%', justifyContent: 'space-between' }}>
+          <Button type="primary" onClick={() => { setEditing(null); setIsModalOpen(true) }}>
+            Создать дефект
+          </Button>
+          <Space wrap>
+            <Input
+              placeholder="Поиск по названию, описанию, проекту или исполнителю"
+              prefix={<SearchOutlined />}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              style={{ width: 300 }}
+            />
+            <Select
+              placeholder="Статус"
+              value={statusFilter}
+              onChange={setStatusFilter}
+              allowClear
+              style={{ width: 120 }}
+            >
+              <Select.Option value="new">Новый</Select.Option>
+              <Select.Option value="in_progress">В работе</Select.Option>
+              <Select.Option value="review">На проверке</Select.Option>
+              <Select.Option value="closed">Закрыт</Select.Option>
+            </Select>
+            <Select
+              placeholder="Приоритет"
+              value={priorityFilter}
+              onChange={setPriorityFilter}
+              allowClear
+              style={{ width: 120 }}
+            >
+              <Select.Option value="low">Низкий</Select.Option>
+              <Select.Option value="medium">Средний</Select.Option>
+              <Select.Option value="high">Высокий</Select.Option>
+            </Select>
+          </Space>
+        </Space>
+      </Card>
+      <Table 
+        rowKey="id" 
+        columns={columns as any} 
+        dataSource={filteredData} 
+        pagination={{ pageSize: 10 }} 
+        scroll={{ x: 1000 }}
+      />
       <DefectForm
         open={isModalOpen}
         title={editing ? 'Изменить дефект' : 'Создать дефект'}
@@ -104,6 +173,7 @@ const Defects = () => {
           description: editing.description,
           projectName: editing.projectName,
           priority: editing.priority,
+          assigneeName: editing.assigneeName,
         } : undefined}
         loading={createMutation.isPending || updateMutation.isPending}
         onCancel={() => { setIsModalOpen(false); setEditing(null) }}
@@ -115,6 +185,7 @@ const Defects = () => {
               description: values.description,
               projectName: values.projectName,
               priority: values.priority,
+              assigneeName: values.assigneeName,
               attachments: values.attachments ?? editing.attachments,
             }, 
             { onSuccess: () => { setIsModalOpen(false); setEditing(null) } })
@@ -125,11 +196,17 @@ const Defects = () => {
               description: values.description,
               projectName: values.projectName,
               priority: values.priority,
+              assigneeName: values.assigneeName,
               attachments: values.attachments,
             }, 
             { onSuccess: () => { setIsModalOpen(false); setEditing(null) } })
           }
         }}
+      />
+      <DefectDetail
+        open={!!viewing}
+        defect={viewing}
+        onClose={() => setViewing(null)}
       />
     </>
   )
