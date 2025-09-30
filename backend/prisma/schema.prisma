@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  engineer
+  manager
+  lead
+  admin
+}
+
+enum DefectStatus {
+  new
+  in_progress
+  review
+  closed
+}
+
+enum DefectPriority {
+  low
+  medium
+  high
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String
+  role          Role      @default(engineer)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  projectMemberships ProjectMember[]
+  createdDefects     Defect[]       @relation("createdBy")
+  assignedDefects    Defect[]       @relation("assignee")
+  comments           Comment[]
+  attachments        Attachment[]
+  auditLogs          AuditLog[]
+}
+
+model Project {
+  id          String          @id @default(uuid())
+  name        String
+  description String?
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  members     ProjectMember[]
+  defects     Defect[]
+}
+
+model ProjectMember {
+  id        String   @id @default(uuid())
+  project   Project  @relation(fields: [projectId], references: [id])
+  projectId String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  @@unique([projectId, userId])
+}
+
+model Defect {
+  id           String         @id @default(uuid())
+  title        String
+  description  String?
+  priority     DefectPriority @default(medium)
+  status       DefectStatus   @default(new)
+  project      Project?       @relation(fields: [projectId], references: [id])
+  projectId    String?
+  assignee     User?          @relation("assignee", fields: [assigneeId], references: [id])
+  assigneeId   String?
+  createdBy    User           @relation("createdBy", fields: [createdById], references: [id])
+  createdById  String
+  attachments  Attachment[]
+  comments     Comment[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+}
+
+model Attachment {
+  id           String   @id @default(uuid())
+  defect       Defect?  @relation(fields: [defectId], references: [id])
+  defectId     String?
+  filename     String
+  path         String
+  mimeType     String?
+  size         Int?
+  uploadedBy   User?    @relation(fields: [uploadedById], references: [id])
+  uploadedById String?
+  createdAt    DateTime @default(now())
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  defect    Defect   @relation(fields: [defectId], references: [id])
+  defectId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  String
+  text      String
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String  @id @default(uuid())
+  user      User?   @relation(fields: [userId], references: [id])
+  userId    String?
+  action    String
+  target    String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+}
