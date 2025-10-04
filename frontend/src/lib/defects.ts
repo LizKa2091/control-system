@@ -8,21 +8,30 @@ export type Defect = {
    id: string;
    title: string;
    description?: string;
-   projectId?: string;
-   projectName?: string;
-   priority: DefectPriority;
-   status: DefectStatus;
-   assigneeId?: string;
-   createdBy: string;
+   priority: 'low' | 'medium' | 'high';
+   status: 'new' | 'in_progress' | 'review' | 'closed';
    createdAt: string;
    updatedAt: string;
-   attachments: { id: string; name: string }[];
+
+   project?: { id: string; name: string } | null;
+   createdBy: { id: string; email: string };
+   assignee?: { id: string; email: string } | null;
+
+   attachments?: { id: string; name: string }[];
    comments: {
       id: string;
       text: string;
       author: { id: string; email: string };
-      createdAt: string;
    }[];
+};
+
+export type DefectInput = {
+   title: string;
+   description?: string;
+   projectId?: string;
+   priority: DefectPriority;
+   assigneeId?: string;
+   attachments?: { filename: string }[];
 };
 
 export const useDefects = () => {
@@ -37,16 +46,8 @@ export const useDefects = () => {
 
 export const useCreateDefect = () => {
    const queryClient = useQueryClient();
-
    return useMutation({
-      mutationFn: async (input: {
-         title: string;
-         description?: string;
-         projectId?: string;
-         priority: DefectPriority;
-         assigneeId?: string;
-         attachments?: { filename: string }[];
-      }) => {
+      mutationFn: async (input: DefectInput) => {
          const { data } = await api.post<Defect>('/defects', input);
          return data;
       },
@@ -56,9 +57,8 @@ export const useCreateDefect = () => {
 
 export const useUpdateDefect = () => {
    const queryClient = useQueryClient();
-
    return useMutation({
-      mutationFn: async (input: Partial<Defect> & { id: string }) => {
+      mutationFn: async (input: DefectInput & { id: string }) => {
          const { data } = await api.put<Defect>(`/defects/${input.id}`, input);
          return data;
       },
@@ -83,9 +83,7 @@ export const useAdvanceStatus = () => {
 
    return useMutation({
       mutationFn: async (id: string) => {
-         const { data } = await api.put<Defect>(`/defects/${id}`, {
-            status: 'in_progress'
-         });
+         const { data } = await api.put<Defect>(`/defects/${id}/advance`);
          return data;
       },
       onSuccess: () => queryClient.invalidateQueries({ queryKey: ['defects'] })

@@ -69,10 +69,10 @@ const Defects = () => {
             defect.description
                ?.toLowerCase()
                .includes(searchText.toLowerCase()) ||
-            defect.projectName
+            defect.project?.name
                ?.toLowerCase()
                .includes(searchText.toLowerCase()) ||
-            defect.assigneeName
+            defect.assignee?.email
                ?.toLowerCase()
                .includes(searchText.toLowerCase());
 
@@ -94,7 +94,7 @@ const Defects = () => {
          },
          {
             title: 'Проект',
-            dataIndex: 'projectName',
+            dataIndex: ['project', 'name'],
             width: 120,
             ellipsis: true
          },
@@ -116,7 +116,7 @@ const Defects = () => {
          },
          {
             title: 'Исполнитель',
-            dataIndex: 'assigneeName',
+            dataIndex: ['assignee', 'email'],
             width: 120,
             ellipsis: true
          },
@@ -170,7 +170,7 @@ const Defects = () => {
             )
          }
       ],
-      [advanceMutation.isPending, deleteMutation.isPending]
+      [advanceMutation, deleteMutation]
    );
 
    return (
@@ -238,9 +238,9 @@ const Defects = () => {
                   ? {
                        title: editing.title,
                        description: editing.description,
-                       projectName: editing.projectName,
+                       projectId: editing.project?.id,
                        priority: editing.priority,
-                       assigneeName: editing.assigneeName
+                       assigneeId: editing.assignee?.id
                     }
                   : undefined
             }
@@ -256,10 +256,12 @@ const Defects = () => {
                         id: editing.id,
                         title: values.title,
                         description: values.description,
-                        projectName: values.projectName,
+                        projectId: values.projectId,
                         priority: values.priority,
-                        assigneeName: values.assigneeName,
-                        attachments: values.attachments ?? editing.attachments
+                        assigneeId: values.assigneeId,
+                        attachments: values.attachments?.map((a) => ({
+                           filename: a.name
+                        }))
                      },
                      {
                         onSuccess: () => {
@@ -273,10 +275,12 @@ const Defects = () => {
                      {
                         title: values.title,
                         description: values.description,
-                        projectName: values.projectName,
+                        projectId: values.projectId,
                         priority: values.priority,
-                        assigneeName: values.assigneeName,
-                        attachments: values.attachments
+                        assigneeId: values.assigneeId,
+                        attachments: values.attachments?.map((a) => ({
+                           filename: a.name
+                        }))
                      },
                      {
                         onSuccess: () => {

@@ -93,4 +93,37 @@ router.post('/:id/comments', async (req, res) => {
    res.status(201).json(comment);
 });
 
+router.put('/:id/advance', async (req, res) => {
+   const { id } = req.params;
+
+   const defect = await prisma.defect.findUnique({ where: { id } });
+   if (!defect) return res.status(404).json({ message: 'Defect not found' });
+
+   const transitions: Record<string, string | null> = {
+      new: 'in_progress',
+      in_progress: 'review',
+      review: 'closed',
+      closed: null
+   };
+
+   const nextStatus = transitions[defect.status];
+   if (!nextStatus) {
+      return res.status(400).json({ message: 'Defect is already closed' });
+   }
+
+   const updated = await prisma.defect.update({
+      where: { id },
+      data: { status: nextStatus },
+      include: {
+         project: true,
+         createdBy: true,
+         assignee: true,
+         attachments: true,
+         comments: { include: { author: true } }
+      }
+   });
+
+   res.json(updated);
+});
+
 export default router;
