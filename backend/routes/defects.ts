@@ -50,6 +50,30 @@ router.post('/', async (req, res) => {
    res.status(201).json(defect);
 });
 
+router.get('/:id', async (req, res) => {
+   const { id } = req.params;
+
+   const defect = await prisma.defect.findUnique({
+      where: { id },
+      include: {
+         project: true,
+         createdBy: true,
+         assignee: true,
+         attachments: true,
+         comments: {
+            include: { author: true },
+            orderBy: { createdAt: 'asc' }
+         }
+      }
+   });
+
+   if (!defect) {
+      return res.status(404).json({ message: 'Defect not found' });
+   }
+
+   res.json(defect);
+});
+
 router.put('/:id', async (req, res) => {
    const { id } = req.params;
    const { title, description, priority, assigneeId, projectId, status } =
