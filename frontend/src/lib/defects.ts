@@ -83,9 +83,7 @@ export const useAdvanceStatus = () => {
 
    return useMutation({
       mutationFn: async (id: string) => {
-         const { data } = await api.put<Defect>(`/defects/${id}`, {
-            status: 'in_progress'
-         });
+         const { data } = await api.put<Defect>(`/defects/${id}/advance`);
          return data;
       },
       onSuccess: () => queryClient.invalidateQueries({ queryKey: ['defects'] })
