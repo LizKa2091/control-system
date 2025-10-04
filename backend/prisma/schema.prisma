@@ -30,14 +30,17 @@ enum DefectPriority {
 model User {
   id            String    @id @default(uuid())
   email         String    @unique
+  name          String
   passwordHash  String
   role          Role      @default(engineer)
+
+  defects       Defect[]  @relation("CreatedDefects")
+  assigned      Defect[]  @relation("AssignedDefects")
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
   projectMemberships ProjectMember[]
-  createdDefects     Defect[]       @relation("createdBy")
-  assignedDefects    Defect[]       @relation("assignee")
   comments           Comment[]
   attachments        Attachment[]
   auditLogs          AuditLog[]
@@ -46,14 +49,11 @@ model User {
 model Project {
   id          String          @id @default(uuid())
   name        String
-  description String?
-  startDate   DateTime?
-  endDate     DateTime?
+  defects     Defect[]
+  members     ProjectMember[]
+  
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
-
-  members     ProjectMember[]
-  defects     Defect[]
 }
 
 model ProjectMember {
@@ -71,22 +71,28 @@ model Defect {
   description  String?
   priority     DefectPriority @default(medium)
   status       DefectStatus   @default(new)
+
   project      Project?       @relation(fields: [projectId], references: [id])
   projectId    String?
-  assignee     User?          @relation("assignee", fields: [assigneeId], references: [id])
-  assigneeId   String?
-  createdBy    User           @relation("createdBy", fields: [createdById], references: [id])
+
+  createdBy    User           @relation("CreatedDefects", fields: [createdById], references: [id])
   createdById  String
+
+  assignee     User?          @relation("AssignedDefects", fields: [assigneeId], references: [id])
+  assigneeId   String?
+
   attachments  Attachment[]
   comments     Comment[]
+
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 }
 
 model Attachment {
   id           String   @id @default(uuid())
+  name         String
   defect       Defect?  @relation(fields: [defectId], references: [id])
-  defectId     String?
+  defectId     String
   filename     String
   path         String
   mimeType     String?
@@ -98,11 +104,11 @@ model Attachment {
 
 model Comment {
   id        String   @id @default(uuid())
-  defect    Defect   @relation(fields: [defectId], references: [id])
-  defectId  String
+  text      String
   author    User     @relation(fields: [authorId], references: [id])
   authorId  String
-  text      String
+  defect    Defect   @relation(fields: [defectId], references: [id])
+  defectId  String
   createdAt DateTime @default(now())
 }
 

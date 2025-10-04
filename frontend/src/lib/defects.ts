@@ -1,345 +1,113 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { api } from './api';
 
 export type DefectStatus = 'new' | 'in_progress' | 'review' | 'closed';
 export type DefectPriority = 'low' | 'medium' | 'high';
 
 export type Defect = {
-  id: string
-  title: string
-  description?: string
-  projectId?: string
-  projectName?: string
-  priority: DefectPriority
-  status: DefectStatus
-  assigneeId?: string
-  assigneeName?: string
-  createdBy: string
-  createdByName: string
-  createdAt: string
-  updatedAt: string
-  attachments: { id: string; name: string }[]
-  comments: { id: string; text: string; author: string; createdAt: string }[]
-}
+   id: string;
+   title: string;
+   description?: string;
+   projectId?: string;
+   projectName?: string;
+   priority: DefectPriority;
+   status: DefectStatus;
+   assigneeId?: string;
+   createdBy: string;
+   createdAt: string;
+   updatedAt: string;
+   attachments: { id: string; name: string }[];
+   comments: {
+      id: string;
+      text: string;
+      author: { id: string; email: string };
+      createdAt: string;
+   }[];
+};
 
-const STORAGE_KEY = 'cs_defects';
-
-function readAll(): Defect[] {
-  const raw = localStorage.getItem(STORAGE_KEY);
-
-  if (raw) {
-    return JSON.parse(raw) as Defect[];
-  }
-
-  const testData: Defect[] = [
-    {
-      id: '1',
-      title: 'Трещина в фундаменте',
-      description: 'Обнаружена трещина в фундаменте здания на участке А-1',
-      projectName: 'Жилой комплекс "Солнечный"',
-      priority: 'high',
-      status: 'new',
-      assigneeName: 'Иванов И.И.',
-      createdBy: 'admin',
-      createdByName: 'Администратор',
-      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      attachments: [
-        { id: '1', name: 'фото_трещины.jpg' },
-        { id: '2', name: 'план_участка.pdf' }
-      ],
-      comments: [
-        {
-          id: '1',
-          text: 'Необходимо срочно провести экспертизу',
-          author: 'Петров П.П.',
-          createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
-        }
-      ]
-    },
-    {
-      id: '2',
-      title: 'Неисправность лифта',
-      description: 'Лифт в подъезде №2 не работает',
-      projectName: 'Жилой комплекс "Солнечный"',
-      priority: 'medium',
-      status: 'in_progress',
-      assigneeName: 'Сидоров С.С.',
-      createdBy: 'admin',
-      createdByName: 'Администратор',
-      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-      updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      attachments: [],
-      comments: [
-        {
-          id: '2',
-          text: 'Заказаны запчасти, ожидаем поставку',
-          author: 'Сидоров С.С.',
-          createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
-        }
-      ]
-    },
-    {
-      id: '3',
-      title: 'Протечка в подвале',
-      description: 'Обнаружена протечка воды в подвальном помещении',
-      projectName: 'Офисный центр "Бизнес-Плаза"',
-      priority: 'high',
-      status: 'review',
-      assigneeName: 'Козлов К.К.',
-      createdBy: 'admin',
-      createdByName: 'Администратор',
-      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-      updatedAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-      attachments: [
-        { id: '3', name: 'видео_протечки.mp4' }
-      ],
-      comments: [
-        {
-          id: '3',
-          text: 'Протечка устранена, требуется проверка',
-          author: 'Козлов К.К.',
-          createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()
-        }
-      ]
-    },
-    {
-      id: '4',
-      title: 'Повреждение кровли',
-      description: 'Обнаружены повреждения кровельного покрытия',
-      projectName: 'Жилой комплекс "Солнечный"',
-      priority: 'medium',
-      status: 'closed',
-      assigneeName: 'Петров П.П.',
-      createdBy: 'admin',
-      createdByName: 'Администратор',
-      createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-      updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      attachments: [
-        { id: '4', name: 'фото_кровли.jpg' }
-      ],
-      comments: [
-        {
-          id: '4',
-          text: 'Кровля отремонтирована',
-          author: 'Петров П.П.',
-          createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
-        }
-      ]
-    },
-    {
-      id: '5',
-      title: 'Неисправность отопления',
-      description: 'Отопление в квартире 45 не работает',
-      projectName: 'Жилой комплекс "Солнечный"',
-      priority: 'high',
-      status: 'in_progress',
-      assigneeName: 'Сидоров С.С.',
-      createdBy: 'admin',
-      createdByName: 'Администратор',
-      createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      updatedAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-      attachments: [],
-      comments: []
-    },
-    {
-      id: '6',
-      title: 'Повреждение фасада',
-      description: 'Трещины в фасадной отделке',
-      projectName: 'Офисный центр "Бизнес-Плаза"',
-      priority: 'low',
-      status: 'new',
-      assigneeName: 'Козлов К.К.',
-      createdBy: 'admin',
-      createdByName: 'Администратор',
-      createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-      updatedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-      attachments: [
-        { id: '5', name: 'фото_фасада.jpg' }
-      ],
-      comments: []
-    },
-    {
-      id: '7',
-      title: 'Неисправность кондиционера',
-      description: 'Кондиционер в офисе 301 не охлаждает',
-      projectName: 'Офисный центр "Бизнес-Плаза"',
-      priority: 'medium',
-      status: 'closed',
-      assigneeName: 'Иванов И.И.',
-      createdBy: 'admin',
-      createdByName: 'Администратор',
-      createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-      updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      attachments: [],
-      comments: [
-        {
-          id: '5',
-          text: 'Кондиционер заменён',
-          author: 'Иванов И.И.',
-          createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-        }
-      ]
-    },
-    {
-      id: '8',
-      title: 'Протечка в ванной',
-      description: 'Протечка воды в ванной комнате квартиры 12',
-      projectName: 'Жилой комплекс "Солнечный"',
-      priority: 'high',
-      status: 'review',
-      assigneeName: 'Петров П.П.',
-      createdBy: 'admin',
-      createdByName: 'Администратор',
-      createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-      updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-      attachments: [
-        { id: '6', name: 'фото_протечки.jpg' }
-      ],
-      comments: [
-        {
-          id: '6',
-          text: 'Протечка устранена, ждём проверки',
-          author: 'Петров П.П.',
-          createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-        }
-      ]
-    }
-  ];
-
-  writeAll(testData);
-  return testData;
-}
-
-function writeAll(defects: Defect[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(defects))
-}
-
-export function useDefects() {
-  return useQuery({
-    queryKey: ['defects'],
-    queryFn: async () => readAll(),
-  })
-}
-
-export function useCreateDefect() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (input: Omit<Defect, 'id' | 'status' | 'attachments' | 'comments' | 'createdAt' | 'updatedAt' | 'createdBy' | 'createdByName'> & { 
-      attachments?: { id: string; name: string }[] 
-    }) => {
-      const now = new Date().toISOString();
-      const next: Defect = {
-        id: crypto.randomUUID(),
-        title: input.title,
-        description: input.description,
-        projectId: input.projectId,
-        projectName: input.projectName,
-        priority: input.priority,
-        status: 'new',
-        assigneeId: input.assigneeId,
-        assigneeName: input.assigneeName,
-        createdBy: 'current-user', // TODO: получить из контекста аутентификации
-        createdByName: 'Текущий пользователь', // TODO: получить из контекста аутентификации
-        createdAt: now,
-        updatedAt: now,
-        attachments: input.attachments ?? [],
-        comments: [],
-      };
-
-      const all = readAll();
-      writeAll([next, ...all]);
-      return next;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['defects'] }),
-  })
-}
-
-export function useUpdateDefect() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (input: Partial<Defect> & { id: string }) => {
-      const all = readAll();
-      const idx = all.findIndex(d => d.id === input.id);
-
-      if (idx >= 0) {
-        all[idx] = { 
-          ...all[idx], 
-          ...input, 
-          updatedAt: new Date().toISOString() 
-        };
-        writeAll(all);
-        
-        return all[idx];
+export const useDefects = () => {
+   return useQuery({
+      queryKey: ['defects'],
+      queryFn: async () => {
+         const { data } = await api.get<Defect[]>('/defects');
+         return data;
       }
-      throw new Error('Дефект не найден');
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['defects'] }),
-  })
-}
+   });
+};
 
-export function useDeleteDefect() {
-  const queryClient = useQueryClient();
+export const useCreateDefect = () => {
+   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const all = readAll();
-      writeAll(all.filter(d => d.id !== id));
+   return useMutation({
+      mutationFn: async (input: {
+         title: string;
+         description?: string;
+         projectId?: string;
+         priority: DefectPriority;
+         assigneeId?: string;
+         attachments?: { filename: string }[];
+      }) => {
+         const { data } = await api.post<Defect>('/defects', input);
+         return data;
+      },
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['defects'] })
+   });
+};
 
-      return id;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['defects'] }),
-  })
-}
+export const useUpdateDefect = () => {
+   const queryClient = useQueryClient();
 
-export function useAdvanceStatus() {
-  const queryClient = useQueryClient();
+   return useMutation({
+      mutationFn: async (input: Partial<Defect> & { id: string }) => {
+         const { data } = await api.put<Defect>(`/defects/${input.id}`, input);
+         return data;
+      },
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['defects'] })
+   });
+};
 
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const all = readAll();
-      const idx = all.findIndex(d => d.id === id);
+export const useDeleteDefect = () => {
+   const queryClient = useQueryClient();
 
-      if (idx === -1) throw new Error('Дефект не найден');
+   return useMutation({
+      mutationFn: async (id: string) => {
+         await api.delete(`/defects/${id}`);
+         return id;
+      },
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['defects'] })
+   });
+};
 
-      const order: DefectStatus[] = ['new', 'in_progress', 'review', 'closed'];
-      const current = all[idx].status;
-      const nextIndex = Math.min(order.indexOf(current) + 1, order.length - 1);
+export const useAdvanceStatus = () => {
+   const queryClient = useQueryClient();
 
-      all[idx].status = order[nextIndex];
-      all[idx].updatedAt = new Date().toISOString();
-      writeAll(all);
+   return useMutation({
+      mutationFn: async (id: string) => {
+         const { data } = await api.put<Defect>(`/defects/${id}`, {
+            status: 'in_progress'
+         });
+         return data;
+      },
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['defects'] })
+   });
+};
 
-      return all[idx];
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['defects'] }),
-  })
-}
+export const useAddComment = () => {
+   const queryClient = useQueryClient();
 
-export function useAddComment() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ defectId, text }: { defectId: string; text: string }) => {
-      const all = readAll();
-      const idx = all.findIndex(d => d.id === defectId);
-
-      if (idx === -1) throw new Error('Дефект не найден');
-
-      const comment = {
-        id: crypto.randomUUID(),
-        text,
-        author: 'Текущий пользователь', // TODO: получить из контекста аутентификации
-        createdAt: new Date().toISOString(),
-      };
-
-      all[idx].comments.push(comment);
-      all[idx].updatedAt = new Date().toISOString();
-      writeAll(all);
-
-      return comment;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['defects'] }),
-  })
-}
+   return useMutation({
+      mutationFn: async ({
+         defectId,
+         text
+      }: {
+         defectId: string;
+         text: string;
+      }) => {
+         const { data } = await api.post(`/defects/${defectId}/comments`, {
+            text
+         });
+         return data;
+      },
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['defects'] })
+   });
+};
