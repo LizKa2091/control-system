@@ -4,8 +4,9 @@ import dotenv from 'dotenv';
 import prisma from './db/prisma';
 import cookieParser from 'cookie-parser';
 import authRouter from './routes/auth';
-import { authMiddleware } from './middleware/auth';
 import defectsRouter from './routes/defects';
+import commentsRouter from './routes/comments';
+import { authMiddleware } from './middleware/auth';
 
 dotenv.config();
 
@@ -16,7 +17,7 @@ app.use(cookieParser());
 
 app.use('/api/auth', authRouter);
 
-app.use('/api/defects', authMiddleware, defectsRouter);
+app.use('/api/defects', authMiddleware, defectsRouter, commentsRouter);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
