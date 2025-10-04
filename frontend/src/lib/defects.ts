@@ -36,6 +36,18 @@ export type DefectInput = {
    attachments?: { filename: string }[];
 };
 
+export const useDefect = (id: string | null) => {
+   return useQuery({
+      queryKey: ['defect', id],
+      queryFn: async () => {
+         if (!id) return null;
+         const { data } = await api.get<Defect>(`/defects/${id}`);
+         return data;
+      },
+      enabled: !!id
+   });
+};
+
 export const useDefects = () => {
    return useQuery({
       queryKey: ['defects'],
