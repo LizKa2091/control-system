@@ -96,7 +96,19 @@ router.post('/:id/comments', async (req, res) => {
 router.put('/:id/advance', async (req, res) => {
    const { id } = req.params;
 
-   const defect = await prisma.defect.findUnique({ where: { id } });
+   const defect = await prisma.defect.findUnique({
+      where: { id },
+      include: {
+         project: true,
+         assignee: true,
+         createdBy: true,
+         attachments: true,
+         comments: {
+            include: { author: true },
+            orderBy: { createdAt: 'asc' }
+         }
+      }
+   });
    if (!defect) return res.status(404).json({ message: 'Defect not found' });
 
    const transitions: Record<string, string | null> = {
