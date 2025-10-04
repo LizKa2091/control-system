@@ -21,6 +21,7 @@ export type Defect = {
    comments: {
       id: string;
       text: string;
+      createdAt: string;
       author: { id: string; email: string };
    }[];
 };
