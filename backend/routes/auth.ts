@@ -1,9 +1,11 @@
-// routes/auth.ts
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import prisma from '../db/prisma';
 import { authMiddleware } from '../middleware/auth';
+
+const resetTokens = new Map<string, { userId: string, expiresAt: number }>();
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
@@ -109,6 +111,61 @@ router.post('/refresh', async (req: Request, res: Response) => {
    } catch (err) {
       console.error('Refresh token error:', err);
       return res.status(401).json({ message: 'Неверный или просроченный refresh токен' });
+   }
+});
+
+router.post('/forgot', async (req: Request, res: Response) => {
+   try {
+      const { email } = req.body;
+      if (!email) return res.status(400).json({ message: 'Email обязателен' });
+
+      const user = await prisma.user.findUnique({ where: { email } });
+      if (!user) {
+         return res.json({ message: 'Если пользователь существует, ссылка отправлена' });
+      }
+
+      const token = crypto.randomBytes(32).toString('hex');
+      resetTokens.set(token, { userId: user.id, expiresAt: Date.now() + 1000 * 60 * 15 });
+
+      const resetLink = `${process.env.FRONTEND_URL}/reset?token=${token}`;
+
+      console.log('Reset link:', resetLink);
+
+      return res.json({ message: 'Если пользователь существует, ссылка отправлена' });
+   } catch (err) {
+      console.error('Forgot password error:', err);
+      return res.status(500).json({ message: 'Ошибка восстановления пароля' });
+   }
+});
+
+router.post('/reset', async (req: Request, res: Response) => {
+   try {
+      const { token, password } = req.body;
+      if (!token || !password) {
+         return res.status(400).json({ message: 'Токен и пароль обязательны' });
+      }
+
+      const entry = resetTokens.get(token);
+      if (!entry || entry.expiresAt < Date.now()) {
+         return res.status(400).json({ message: 'Неверный или просроченный токен' });
+      }
+
+      const user = await prisma.user.findUnique({ where: { id: entry.userId } });
+      if (!user) return res.status(404).json({ message: 'Пользователь не найден' });
+
+      const passwordHash = await bcrypt.hash(password, 10);
+
+      await prisma.user.update({
+         where: { id: user.id },
+         data: { passwordHash }
+      });
+
+      resetTokens.delete(token);
+
+      return res.json({ message: 'Пароль успешно обновлён' });
+   } catch (err) {
+      console.error('Reset password error:', err);
+      return res.status(500).json({ message: 'Ошибка сброса пароля' });
    }
 });
 
