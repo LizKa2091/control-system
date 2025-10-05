@@ -1,7 +1,7 @@
 import { useState, type FC } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, Card, Flex, Form, Input, Typography } from 'antd';
-import { api } from '../lib/api';
+import { useApi } from '../lib/useApi';
 import type { AxiosError } from 'axios';
 
 interface IFormMessage {
@@ -16,38 +16,33 @@ interface IFormData {
 const ForgotPassword: FC = () => {
    const [form] = Form.useForm<IFormData>();
    const [formMessage, setFormMessage] = useState<IFormMessage | null>(null);
+   const api = useApi();
 
    const onFinish = async (values: IFormData) => {
       try {
          const { data } = await api.post('/auth/forgot', values);
 
-         setFormMessage({ type: 'success', text: data?.message || 'Если пользователь существует, письмо отправлено' });
+         setFormMessage({
+            type: 'success',
+            text: data?.message || 'Если пользователь существует, письмо отправлено'
+         });
       } catch (e: unknown) {
          const err = e as AxiosError<{ message?: string }>;
-
-         setFormMessage({ type: 'error', text: err?.response?.data?.message || 'Ошибка запроса' });
+         setFormMessage({
+            type: 'error',
+            text: err?.response?.data?.message || 'Ошибка запроса'
+         });
       }
    };
 
    return (
-      <Flex
-         style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: '60vh'
-         }}
-      >
+      <Flex style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
          <Card style={{ width: 420 }}>
             <Typography.Title level={3} style={{ textAlign: 'center' }}>
                Восстановление пароля
             </Typography.Title>
             <Form form={form} layout="vertical" onFinish={onFinish}>
-               <Form.Item
-                  name="email"
-                  label="Email"
-                  rules={[{ required: true, message: 'Введите email' }]}
-               >
+               <Form.Item name="email" label="Email" rules={[{ required: true, message: 'Введите email' }]}>
                   <Input type="email" />
                </Form.Item>
                <Form.Item>

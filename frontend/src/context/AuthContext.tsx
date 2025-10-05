@@ -51,7 +51,7 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
 
    useEffect(() => {
       const fetchProfile = async () => {
-         if (!token || user) return;
+         if (!token) return;
          try {
             const { data } = await api.get('/auth/me');
             if (data?.user) {
@@ -63,7 +63,7 @@ export const AuthProvider: FC<IAuthProviderProps> = ({ children }) => {
          }
       };
       void fetchProfile();
-   }, [token, user, logout]);
+   }, [token, logout]);
 
    const hasRole = useCallback(
       (role: AuthUser['role']) => user?.role === role,

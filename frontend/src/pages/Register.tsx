@@ -1,16 +1,8 @@
 import { useState, type FC } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import {
-   Button,
-   Card,
-   Flex,
-   Form,
-   Input,
-   Select,
-   Typography
-} from 'antd';
-import { api } from '../lib/api';
+import { Button, Card, Flex, Form, Input, Select, Typography } from 'antd';
 import { useAuth } from '../context/useAuth';
+import { useApi } from '../lib/useApi';
 import type { AxiosError } from 'axios';
 
 type Role = 'engineer' | 'manager' | 'lead';
@@ -31,6 +23,7 @@ const Register: FC = () => {
    const [formMessage, setFormMessage] = useState<IFormMessage | null>(null);
    const navigate = useNavigate();
    const { login } = useAuth();
+   const api = useApi();
 
    const onFinish = async (values: IFormData) => {
       try {
@@ -41,50 +34,32 @@ const Register: FC = () => {
          if (!token) throw new Error('Токен отсутствует');
 
          login(token, user);
-         setFormMessage({ type: 'success', text: 'Успешная регистрая' });
+         setFormMessage({ type: 'success', text: 'Успешная регистрация' });
 
          navigate('/dashboard', { replace: true });
       } catch (e: unknown) {
          const err = e as AxiosError<{ message?: string }>;
-
-         setFormMessage({ type: 'error', text: err?.response?.data?.message || 'Не удалось зарегистрироваться' });
+         setFormMessage({
+            type: 'error',
+            text: err?.response?.data?.message || 'Не удалось зарегистрироваться'
+         });
       }
    };
 
    return (
-      <Flex
-         style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: '60vh'
-         }}
-      >
+      <Flex style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
          <Card style={{ width: 420 }}>
             <Typography.Title level={3} style={{ textAlign: 'center' }}>
                Регистрация
             </Typography.Title>
             <Form form={form} layout="vertical" onFinish={onFinish}>
-               <Form.Item
-                  name="email"
-                  label="Email"
-                  rules={[{ required: true, message: 'Введите email' }]}
-               >
+               <Form.Item name="email" label="Email" rules={[{ required: true, message: 'Введите email' }]}>
                   <Input type="email" />
                </Form.Item>
-               <Form.Item
-                  name="password"
-                  label="Пароль"
-                  rules={[{ required: true, message: 'Введите пароль' }]}
-               >
+               <Form.Item name="password" label="Пароль" rules={[{ required: true, message: 'Введите пароль' }]}>
                   <Input.Password />
                </Form.Item>
-               <Form.Item
-                  name="role"
-                  label="Роль"
-                  initialValue={'engineer'}
-                  rules={[{ required: true }]}
-               >
+               <Form.Item name="role" label="Роль" initialValue="engineer" rules={[{ required: true }]}>
                   <Select
                      options={[
                         { value: 'engineer', label: 'Инженер' },

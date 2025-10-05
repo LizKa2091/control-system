@@ -1,9 +1,9 @@
 import { useState, type FC } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Button, Card, Flex, Form, Input, Typography } from 'antd';
-import { api } from '../lib/api';
 import { useAuth } from '../context/useAuth';
 import type { AxiosError } from 'axios';
+import { useApi } from '../lib/useApi';
 
 interface IFormMessage {
    type: 'error' | 'success';
@@ -21,6 +21,7 @@ const Login: FC = () => {
    const navigate = useNavigate();
    const location = useLocation();
    const { login } = useAuth();
+   const api = useApi();
 
    const onFinish = async (values: IFormData) => {
       setFormMessage(null);

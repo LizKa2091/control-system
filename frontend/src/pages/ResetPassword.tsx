@@ -1,7 +1,7 @@
 import { useState, type FC } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button, Card, Flex, Form, Input, Typography } from 'antd';
-import { api } from '../lib/api';
+import { useApi } from '../lib/useApi';
 import type { AxiosError } from 'axios';
 
 interface IFormMessage {
@@ -18,6 +18,7 @@ const ResetPassword: FC = () => {
    const [formMessage, setFormMessage] = useState<IFormMessage | null>(null);
    const [params] = useSearchParams();
    const navigate = useNavigate();
+   const api = useApi();
 
    const token = params.get('token') || '';
 
@@ -29,8 +30,10 @@ const ResetPassword: FC = () => {
          navigate('/login', { replace: true });
       } catch (e: unknown) {
          const err = e as AxiosError<{ message?: string }>;
-
-         setFormMessage({ type: 'error', text: err?.response?.data?.message || 'Не удалось обновить пароль' });
+         setFormMessage({
+            type: 'error',
+            text: err?.response?.data?.message || 'Не удалось обновить пароль'
+         });
       }
    };
 
