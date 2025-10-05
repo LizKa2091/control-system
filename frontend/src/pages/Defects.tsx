@@ -48,10 +48,10 @@ const Defects = () => {
    const deleteMutation = useDeleteDefect();
    const advanceMutation = useAdvanceStatus();
 
-   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+   const [isModalOpen, setIsModalOpen] = useState(false);
    const [editing, setEditing] = useState<Defect | null>(null);
-   const [viewing, setViewing] = useState<Defect | null>(null);
-   const [searchText, setSearchText] = useState<string>('');
+   const [viewingId, setViewingId] = useState<string | null>(null);
+   const [searchText, setSearchText] = useState('');
    const [statusFilter, setStatusFilter] = useState<string | undefined>(
       undefined
    );
@@ -132,7 +132,7 @@ const Defects = () => {
             width: 200,
             render: (_: unknown, record: Defect) => (
                <Space>
-                  <Button size="small" onClick={() => setViewing(record)}>
+                  <Button size="small" onClick={() => setViewingId(record.id)}>
                      Просмотр
                   </Button>
                   <Button
@@ -293,9 +293,9 @@ const Defects = () => {
             }}
          />
          <DefectDetail
-            open={!!viewing}
-            defect={viewing}
-            onClose={() => setViewing(null)}
+            open={!!viewingId}
+            defectId={viewingId}
+            onClose={() => setViewingId(null)}
          />
       </>
    );

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './api';
+import axios from 'axios';
 
 export type DefectStatus = 'new' | 'in_progress' | 'review' | 'closed';
 export type DefectPriority = 'low' | 'medium' | 'high';
@@ -21,6 +22,7 @@ export type Defect = {
    comments: {
       id: string;
       text: string;
+      createdAt: string;
       author: { id: string; email: string };
    }[];
 };
@@ -32,6 +34,18 @@ export type DefectInput = {
    priority: DefectPriority;
    assigneeId?: string;
    attachments?: { filename: string }[];
+};
+
+export const useDefect = (id: string | null) => {
+   return useQuery({
+      queryKey: ['defect', id],
+      queryFn: async () => {
+         if (!id) return null;
+         const { data } = await api.get<Defect>(`/defects/${id}`);
+         return data;
+      },
+      enabled: !!id
+   });
 };
 
 export const useDefects = () => {
@@ -101,11 +115,14 @@ export const useAddComment = () => {
          defectId: string;
          text: string;
       }) => {
-         const { data } = await api.post(`/defects/${defectId}/comments`, {
-            text
-         });
+         const { data } = await axios.post(
+            `/api/defects/${defectId}/comments`,
+            { text }
+         );
          return data;
       },
-      onSuccess: () => queryClient.invalidateQueries({ queryKey: ['defects'] })
+      onSuccess: (_, { defectId }) => {
+         queryClient.invalidateQueries({ queryKey: ['defect', defectId] });
+      }
    });
 };
