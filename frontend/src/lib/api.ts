@@ -20,7 +20,9 @@ api.interceptors.response.use(
     if (error?.response?.status === 401) {
       try {
         localStorage.removeItem('token')
-      } catch {}
+      } catch (err) {
+        console.error('Failed to remove token', err);
+      }
     }
     return Promise.reject(error)
   }

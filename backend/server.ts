@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 import authRouter from './routes/auth';
 import defectsRouter from './routes/defects';
 import commentsRouter from './routes/comments';
+import projectRouter from './routes/projects';
 import { authMiddleware } from './middleware/auth';
 
 dotenv.config();
@@ -18,6 +19,8 @@ app.use(cookieParser());
 app.use('/api/auth', authRouter);
 
 app.use('/api/defects', authMiddleware, defectsRouter, commentsRouter);
+
+app.use('/api/projects', projectRouter);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 

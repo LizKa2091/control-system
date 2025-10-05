@@ -10,26 +10,26 @@ async function main() {
     prisma.user.upsert({
       where: { email: 'engineer@example.com' },
       update: {},
-      create: { email: 'engineer@example.com', passwordHash: pass, role: Role.engineer },
+      create: { email: 'engineer@example.com', name: 'Engineer User', passwordHash: pass, role: Role.engineer },
     }),
     prisma.user.upsert({
       where: { email: 'manager@example.com' },
       update: {},
-      create: { email: 'manager@example.com', passwordHash: pass, role: Role.manager },
+      create: { email: 'manager@example.com', name: 'Manager User', passwordHash: pass, role: Role.manager },
     }),
     prisma.user.upsert({
       where: { email: 'lead@example.com' },
       update: {},
-      create: { email: 'lead@example.com', passwordHash: pass, role: Role.lead },
+      create: { email: 'lead@example.com', name: 'Lead User', passwordHash: pass, role: Role.lead },
     }),
   ]);
 
   const project = await prisma.project.upsert({
-    where: { name: 'Жилой комплекс "Солнечный"' },
+    where: { id: '1', name: 'Жилой комплекс "Солнечный"' },
     update: {},
     create: {
       name: 'Жилой комплекс "Солнечный"',
-      description: 'Тестовый проект',
+      status: 'planned'
     },
   });
 
@@ -51,8 +51,8 @@ async function main() {
         status: 'new',
         projectId: project.id,
         createdById: engineer.id,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
       } as any,
     ],
   });

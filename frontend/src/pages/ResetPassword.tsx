@@ -1,8 +1,13 @@
-import type { FC } from 'react';
+import { useState, type FC } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Button, Card, Flex, Form, Input, Typography, message } from 'antd';
-import { api } from '../lib/api';
+import { Button, Card, Flex, Form, Input, Typography } from 'antd';
+import { useApi } from '../lib/useApi';
 import type { AxiosError } from 'axios';
+
+interface IFormMessage {
+   type: 'error' | 'success';
+   text: string;
+}
 
 interface IFormData {
    password: string;
@@ -10,8 +15,10 @@ interface IFormData {
 
 const ResetPassword: FC = () => {
    const [form] = Form.useForm<IFormData>();
+   const [formMessage, setFormMessage] = useState<IFormMessage | null>(null);
    const [params] = useSearchParams();
    const navigate = useNavigate();
+   const api = useApi();
 
    const token = params.get('token') || '';
 
@@ -19,14 +26,14 @@ const ResetPassword: FC = () => {
       try {
          await api.post('/auth/reset', { token, password: values.password });
 
-         message.success('Пароль обновлён');
+         setFormMessage({ type: 'success', text: 'Пароль успешно обновлён' });
          navigate('/login', { replace: true });
       } catch (e: unknown) {
          const err = e as AxiosError<{ message?: string }>;
-
-         message.error(
-            err?.response?.data?.message || 'Не удалось обновить пароль'
-         );
+         setFormMessage({
+            type: 'error',
+            text: err?.response?.data?.message || 'Не удалось обновить пароль'
+         });
       }
    };
 
@@ -61,6 +68,11 @@ const ResetPassword: FC = () => {
                      Обновить пароль
                   </Button>
                </Form.Item>
+               {formMessage && (
+                  <Typography.Text type={formMessage.type === 'error' ? 'danger' : 'success'}>
+                     {formMessage.text}
+                  </Typography.Text>
+               )}
             </Form>
          </Card>
       </Flex>
