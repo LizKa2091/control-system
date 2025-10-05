@@ -1,4 +1,4 @@
-import type { FC } from 'react';
+import { useState, type FC } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
    Button,
@@ -7,14 +7,18 @@ import {
    Form,
    Input,
    Select,
-   Typography,
-   message
+   Typography
 } from 'antd';
 import { api } from '../lib/api';
 import { useAuth } from '../context/useAuth';
 import type { AxiosError } from 'axios';
 
 type Role = 'engineer' | 'manager' | 'lead';
+
+interface IFormMessage {
+   type: 'error' | 'success';
+   text: string;
+}
 
 interface IFormData {
    email: string;
@@ -24,6 +28,7 @@ interface IFormData {
 
 const Register: FC = () => {
    const [form] = Form.useForm<IFormData>();
+   const [formMessage, setFormMessage] = useState<IFormMessage | null>(null);
    const navigate = useNavigate();
    const { login } = useAuth();
 
@@ -31,20 +36,18 @@ const Register: FC = () => {
       try {
          const { data } = await api.post('/auth/register', values);
 
-         const token: string = data?.token;
+         const token: string = data?.accessToken;
          const user = data?.user;
          if (!token) throw new Error('Токен отсутствует');
 
          login(token, user);
-         message.success('Регистрация успешна');
+         setFormMessage({ type: 'success', text: 'Успешная регистрая' });
 
          navigate('/dashboard', { replace: true });
       } catch (e: unknown) {
          const err = e as AxiosError<{ message?: string }>;
 
-         message.error(
-            err?.response?.data?.message || 'Не удалось зарегистрироваться'
-         );
+         setFormMessage({ type: 'error', text: err?.response?.data?.message || 'Не удалось зарегистрироваться' });
       }
    };
 
@@ -95,6 +98,11 @@ const Register: FC = () => {
                      Зарегистрироваться
                   </Button>
                </Form.Item>
+               {formMessage && (
+                  <Typography.Text type={formMessage.type === 'error' ? 'danger' : 'success'}>
+                     {formMessage.text}
+                  </Typography.Text>
+               )}
                <Typography.Paragraph style={{ marginBottom: 0 }}>
                   Уже есть аккаунт? <Link to="/login">Войти</Link>
                </Typography.Paragraph>

@@ -1,9 +1,14 @@
-import type { FC } from 'react';
+import { useState, type FC } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Button, Card, Flex, Form, Input, Typography, message } from 'antd';
+import { Button, Card, Flex, Form, Input, Typography } from 'antd';
 import { api } from '../lib/api';
 import { useAuth } from '../context/useAuth';
 import type { AxiosError } from 'axios';
+
+interface IFormMessage {
+   type: 'error' | 'success';
+   text: string;
+}
 
 interface IFormData {
    email: string;
@@ -12,28 +17,31 @@ interface IFormData {
 
 const Login: FC = () => {
    const [form] = Form.useForm<IFormData>();
+   const [formMessage, setFormMessage] = useState<IFormMessage | null>(null)
    const navigate = useNavigate();
    const location = useLocation();
    const { login } = useAuth();
 
    const onFinish = async (values: IFormData) => {
+      setFormMessage(null);
+
       try {
          const { data } = await api.post('/auth/login', values);
 
-         const token: string = data?.token;
+         const token: string = data?.accessToken;
          const user = data?.user;
 
          if (!token) throw new Error('Токен отсутствует');
 
          login(token, user);
-         message.success('Добро пожаловать');
+         setFormMessage({ type: 'success', text: 'Вход выполнен успешно' });
 
          const fromPath = location.state?.from?.pathname || '/dashboard';
          navigate(fromPath, { replace: true });
       } catch (e: unknown) {
          const err = e as AxiosError<{ message?: string }>;
 
-         message.error(err?.response?.data?.message || 'Не удалось войти');
+         setFormMessage({ type: 'error', text: err?.response?.data?.message || 'Не удалось войти' });
       }
    };
 
@@ -70,6 +78,11 @@ const Login: FC = () => {
                      Войти
                   </Button>
                </Form.Item>
+               {formMessage && (
+                  <Typography.Text type={formMessage.type === 'error' ? 'danger' : 'success'}>
+                  {formMessage.text}
+                  </Typography.Text>
+               )}
                <Typography.Paragraph style={{ marginBottom: 0 }}>
                   Нет аккаунта? <Link to="/register">Зарегистрироваться</Link>
                </Typography.Paragraph>
