@@ -8,6 +8,7 @@ import {
    type Project
 } from '../lib/projects';
 import ProjectForm, { type ProjectFormValues } from '../components/ProjectForm';
+import ProjectMembers from '../components/ProjectMembers';
 
 const Projects = () => {
    const { data } = useProjects();
@@ -17,6 +18,9 @@ const Projects = () => {
 
    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
    const [editing, setEditing] = useState<Project | null>(null);
+
+   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+   const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
 
    const columns = useMemo(
       () => [
@@ -36,6 +40,15 @@ const Projects = () => {
                   >
                      Изменить
                   </Button>
+                  <Button
+                     size="small"
+                     onClick={() => {
+                        setSelectedProjectId(record.id);
+                        setIsMembersModalOpen(true);
+                     }}
+                  >
+                     Участники
+                  </Button>
                   <Popconfirm
                      title="Удалить проект?"
                      okText="Да"
@@ -54,7 +67,7 @@ const Projects = () => {
             )
          }
       ],
-      [deleteMutation.isPending]
+      [deleteMutation]
    );
 
    return (
@@ -123,6 +136,13 @@ const Projects = () => {
                }
             }}
          />
+         {selectedProjectId && (
+            <ProjectMembers
+               projectId={selectedProjectId}
+               open={isMembersModalOpen}
+               onClose={() => setIsMembersModalOpen(false)}
+            />
+         )}
       </>
    );
 };
