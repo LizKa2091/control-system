@@ -7,6 +7,7 @@ export type Project = {
    id: string;
    name: string;
    status: ProjectStatus;
+   description?: string;
    createdAt?: string;
    updatedAt?: string;
 };
@@ -59,5 +60,18 @@ export const useDeleteProject = () => {
    return useMutation({
       mutationFn: deleteProject,
       onSuccess: () => queryClient.invalidateQueries({ queryKey: ['projects'] }),
+   });
+}
+
+export const fetchProjectById = async (id: string): Promise<Project> => {
+   const { data } = await api.get(`/projects/${id}`);
+   return data;
+}
+
+export const useProjectById = (id: string) => {
+   return useQuery({
+      queryKey: ['project', id],
+      queryFn: () => fetchProjectById(id),
+      enabled: !!id,
    });
 }

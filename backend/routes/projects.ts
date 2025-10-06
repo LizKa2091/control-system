@@ -20,6 +20,33 @@ router.post('/', async (req, res) => {
    res.status(201).json(project);
 });
 
+router.get('/:id', async (req, res) => {
+   const { id } = req.params;
+
+   const project = await prisma.project.findUnique({
+      where: { id },
+      include: {
+         members: {
+            include: {
+               user: {
+                  select: { id: true, name: true, email: true, role: true },
+               },
+            },
+         },
+         defects: true,
+      },
+   });
+
+   if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+   }
+
+   res.json({
+      ...project,
+      members: project.members.map((m) => m.user),
+   });
+});
+
 router.put('/:id', async (req, res) => {
    const { id } = req.params;
    const { name, status } = req.body;
