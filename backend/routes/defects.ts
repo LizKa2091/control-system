@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../db/prisma';
 import { authMiddleware } from '../middleware/auth';
-import { stringify } from 'csv-stringify/sync';
+import { Parser } from 'json2csv';
 import ExcelJS from 'exceljs';
 
 const router = Router();
@@ -206,36 +206,42 @@ router.put('/:id/advance', authMiddleware, async (req: Request, res: Response) =
    }
 });
 
-router.get('/export/csv', async (_req: Request, res: Response) => {
+router.get('/export/csv', async (req, res) => {
   try {
     const defects = await prisma.defect.findMany({
-      include: {
-        project: true,
-        createdBy: true,
-        assignee: true,
-      },
-      orderBy: { createdAt: 'desc' },
+      include: { project: true, createdBy: true, assignee: true },
+      orderBy: { createdAt: 'desc' }
     });
 
-    const rows = defects.map((d) => ({
-      ID: d.id,
-      Заголовок: d.title,
-      Описание: d.description || '',
-      Приоритет: d.priority,
-      Статус: d.status,
-      Проект: d.project?.name || '',
-      Автор: d.createdBy?.name || '',
-      Исполнитель: d.assignee?.name || '',
-      ДатаСоздания: d.createdAt.toISOString(),
-    }));
+    const fields = [
+      { label: 'ID', value: 'id' },
+      { label: 'Заголовок', value: 'title' },
+      { label: 'Описание', value: 'description' },
+      { label: 'Приоритет', value: 'priority' },
+      { label: 'Статус', value: 'status' },
+      { label: 'Проект', value: (row: any) => row.project?.name || '' },
+      { label: 'Автор', value: (row: any) => row.createdBy?.email || '' },
+      { label: 'Исполнитель', value: (row: any) => row.assignee?.email || '' },
+      { label: 'Создан', value: (row: any) => row.createdAt.toISOString() },
+    ];
 
-    const csv = stringify(rows, { header: true, delimiter: ';' });
+    const parser = new Parser({
+      fields,
+      delimiter: ';',
+      quote: '"',
+      header: true,
+      withBOM: true,
+    });
+    const csv = parser.parse(defects);
+
+    const bom = '\uFEFF';
+    const csvWithBom = bom + csv;
 
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename="defects.csv"');
-    res.send(csv);
+    res.send(csvWithBom);
   } catch (err) {
-    console.error('GET /defects/export/csv error', err);
+    console.error('CSV export error', err);
     res.status(500).json({ message: 'Ошибка экспорта CSV' });
   }
 });
