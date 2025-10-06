@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../db/prisma';
 import { authMiddleware } from '../middleware/auth';
+import { stringify } from 'csv-stringify/sync';
+import ExcelJS from 'exceljs';
 
 const router = Router();
 
@@ -202,6 +204,97 @@ router.put('/:id/advance', authMiddleware, async (req: Request, res: Response) =
       console.error('PUT /defects/:id/advance error', err);
       return res.status(500).json({ message: 'Server error' });
    }
+});
+
+router.get('/export/csv', async (_req: Request, res: Response) => {
+  try {
+    const defects = await prisma.defect.findMany({
+      include: {
+        project: true,
+        createdBy: true,
+        assignee: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const rows = defects.map((d) => ({
+      ID: d.id,
+      Заголовок: d.title,
+      Описание: d.description || '',
+      Приоритет: d.priority,
+      Статус: d.status,
+      Проект: d.project?.name || '',
+      Автор: d.createdBy?.name || '',
+      Исполнитель: d.assignee?.name || '',
+      ДатаСоздания: d.createdAt.toISOString(),
+    }));
+
+    const csv = stringify(rows, { header: true, delimiter: ';' });
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="defects.csv"');
+    res.send(csv);
+  } catch (err) {
+    console.error('GET /defects/export/csv error', err);
+    res.status(500).json({ message: 'Ошибка экспорта CSV' });
+  }
+});
+
+router.get('/export/xlsx', async (_req: Request, res: Response) => {
+  try {
+    const defects = await prisma.defect.findMany({
+      include: {
+        project: true,
+        createdBy: true,
+        assignee: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Defects');
+
+    sheet.columns = [
+      { header: 'ID', key: 'id', width: 36 },
+      { header: 'Заголовок', key: 'title', width: 30 },
+      { header: 'Описание', key: 'description', width: 50 },
+      { header: 'Приоритет', key: 'priority', width: 12 },
+      { header: 'Статус', key: 'status', width: 15 },
+      { header: 'Проект', key: 'project', width: 20 },
+      { header: 'Автор', key: 'createdBy', width: 20 },
+      { header: 'Исполнитель', key: 'assignee', width: 20 },
+      { header: 'Дата создания', key: 'createdAt', width: 20 },
+    ];
+
+    defects.forEach((d) =>
+      sheet.addRow({
+        id: d.id,
+        title: d.title,
+        description: d.description || '',
+        priority: d.priority,
+        status: d.status,
+        project: d.project?.name || '',
+        createdBy: d.createdBy?.name || '',
+        assignee: d.assignee?.name || '',
+        createdAt: d.createdAt.toISOString().split('T')[0],
+      })
+    );
+
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename="defects.xlsx"'
+    );
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (err) {
+    console.error('GET /defects/export/xlsx error', err);
+    res.status(500).json({ message: 'Ошибка экспорта Excel' });
+  }
 });
 
 export default router;
