@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button, Popconfirm, Space, Table } from 'antd';
 import {
    useCreateProject,
@@ -16,7 +17,7 @@ const Projects = () => {
    const updateMutation = useUpdateProject();
    const deleteMutation = useDeleteProject();
 
-   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+   const [isModalOpen, setIsModalOpen] = useState(false);
    const [editing, setEditing] = useState<Project | null>(null);
 
    const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
@@ -24,7 +25,12 @@ const Projects = () => {
 
    const columns = useMemo(
       () => [
-         { title: 'Проект', dataIndex: 'name' },
+         { 
+            title: 'Проект', 
+            dataIndex: 'name', 
+            render: (_: unknown, record: Project) => (
+               <Link to={`/projects/${record.id}`}>{record.name}</Link>
+            )},
          { title: 'Статус', dataIndex: 'status' },
          {
             title: 'Действия',
@@ -55,17 +61,13 @@ const Projects = () => {
                      cancelText="Нет"
                      onConfirm={() => deleteMutation.mutate(record.id)}
                   >
-                     <Button
-                        size="small"
-                        danger
-                        loading={deleteMutation.isPending}
-                     >
+                     <Button size="small" danger>
                         Удалить
                      </Button>
                   </Popconfirm>
                </Space>
-            )
-         }
+            ),
+         },
       ],
       [deleteMutation]
    );
@@ -83,21 +85,20 @@ const Projects = () => {
                Создать проект
             </Button>
          </Space>
+
          <Table
             rowKey="id"
             columns={columns}
             dataSource={data ?? []}
             pagination={false}
          />
+
          <ProjectForm
             open={isModalOpen}
             title={editing ? 'Изменить проект' : 'Создать проект'}
             initialValues={
                editing
-                  ? {
-                       name: editing.name,
-                       status: editing.status
-                    }
+                  ? { name: editing.name, status: editing.status }
                   : undefined
             }
             loading={createMutation.isPending || updateMutation.isPending}
@@ -108,34 +109,24 @@ const Projects = () => {
             onSubmit={(values: ProjectFormValues) => {
                if (editing) {
                   updateMutation.mutate(
-                     {
-                        id: editing.id,
-                        name: values.name,
-                        status: values.status
-                     },
+                     { id: editing.id, ...values },
                      {
                         onSuccess: () => {
                            setIsModalOpen(false);
                            setEditing(null);
-                        }
+                        },
                      }
                   );
                } else {
-                  createMutation.mutate(
-                     {
-                        name: values.name,
-                        status: values.status
+                  createMutation.mutate(values, {
+                     onSuccess: () => {
+                        setIsModalOpen(false);
                      },
-                     {
-                        onSuccess: () => {
-                           setIsModalOpen(false);
-                           setEditing(null);
-                        }
-                     }
-                  );
+                  });
                }
             }}
          />
+
          {selectedProjectId && (
             <ProjectMembers
                projectId={selectedProjectId}

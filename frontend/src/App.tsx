@@ -12,6 +12,7 @@ import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Forbidden from './pages/Forbidden';
+import ProjectView from './pages/ProjectView';
 
 const App: FC = () => {
    return (
@@ -40,6 +41,14 @@ const App: FC = () => {
                      element={
                         <ProtectedPage roles={['manager', 'lead', 'admin']}>
                            <Projects />
+                        </ProtectedPage>
+                     }
+                  />
+                  <Route
+                     path="/projects/:id"
+                     element={
+                        <ProtectedPage roles={['manager', 'lead', 'admin']}>
+                           <ProjectView />
                         </ProtectedPage>
                      }
                   />
