@@ -7,13 +7,14 @@ import authRouter from './routes/auth';
 import defectsRouter from './routes/defects';
 import commentsRouter from './routes/comments';
 import projectRouter from './routes/projects';
+import usersRouter from './routes/users';
 import { authMiddleware } from './middleware/auth';
 
 dotenv.config();
 
 const app = express();
 app.use(cors({ origin: true, credentials: true }));
-app.use(express.json());
+app.use(express.json());   
 app.use(cookieParser());
 
 app.use('/api/auth', authRouter);
@@ -21,6 +22,8 @@ app.use('/api/auth', authRouter);
 app.use('/api/defects', authMiddleware, defectsRouter, commentsRouter);
 
 app.use('/api/projects', projectRouter);
+
+app.use('/api/users', usersRouter);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
