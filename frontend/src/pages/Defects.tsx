@@ -173,6 +173,34 @@ const Defects = () => {
       [advanceMutation, deleteMutation]
    );
 
+   const handleExport = async (format: 'csv' | 'xlsx') => {
+      if (!filteredData.length) return;
+
+      try {
+         const response = await fetch(
+            `${import.meta.env.VITE_API_URL}/defects/export/${format}`,
+            {
+               headers: {
+                  Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
+               },
+            }
+         );
+
+         if (!response.ok) throw new Error('Ошибка при экспорте');
+
+         const blob = await response.blob();
+         const url = window.URL.createObjectURL(blob);
+         const a = document.createElement('a');
+         a.href = url;
+         a.download = `defects.${format}`;
+         document.body.appendChild(a);
+         a.click();
+         a.remove();
+      } catch (e) {
+         console.error(e);
+      }
+   };
+
    return (
       <>
          <Card style={{ marginBottom: 16 }}>
@@ -189,6 +217,12 @@ const Defects = () => {
                >
                   Создать дефект
                </Button>
+               <Button onClick={() => handleExport('csv')}>
+            Экспорт CSV
+         </Button>
+         <Button onClick={() => handleExport('xlsx')}>
+            Экспорт Excel
+         </Button>
                <Space wrap>
                   <Input
                      placeholder="Поиск по названию, описанию, проекту или исполнителю"
