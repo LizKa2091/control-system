@@ -1,5 +1,5 @@
 import { useMemo, type FC } from 'react';
-import { Card, Row, Col, Statistic, Typography, Space } from 'antd';
+import { Card, Row, Col, Statistic, Typography } from 'antd';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -52,7 +52,7 @@ const AnalyticsDashboard: FC = () => {
     }, {} as Record<string, number>);
 
     const assigneeStats = defects.reduce((acc, defect) => {
-      const assignee = defect.assigneeName || 'Не назначен';
+      const assignee = defect.assignee?.email || 'Не назначен';
       acc[assignee] = (acc[assignee] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
