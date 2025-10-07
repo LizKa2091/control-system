@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { Typography, Space, Button, Tabs, Spin, Card, Descriptions } from 'antd';
 import ProjectMembers from '../components/ProjectMembers';
 import { useProjectById } from '../lib/projects';
+import DefectsTable from '../components/DefectsTable';
 
 const { Title, Text } = Typography;
 
@@ -51,7 +52,7 @@ const ProjectView: FC = () => {
                {
                   key: 'defects',
                   label: 'Дефекты',
-                  children: <div>Тут позже будут таблица дефектов</div>,
+                  children: <DefectsTable projectId={project.id} />,
                },
             ]}
          />
