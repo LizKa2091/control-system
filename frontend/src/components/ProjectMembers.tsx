@@ -1,20 +1,23 @@
 import { type FC } from 'react';
 import { Modal, List, Button, Select, Spin, Empty } from 'antd';
 import {
-   useProjectMembers,
-   useAddProjectMember,
-   useRemoveProjectMember,
-   useAllUsers,
-   type User,
+  useProjectMembers,
+  useAddProjectMember,
+  useRemoveProjectMember,
+  useAllUsers,
+  type User,
 } from '../lib/projectMembers';
+import { useAuth } from '../context/useAuth';
+import { ProjectComments } from './ProjectComments';
 
 interface ProjectMembersProps {
-   projectId: string;
-   open: boolean;
-   onClose: () => void;
+  projectId: string;
+  open: boolean;
+  onClose: () => void;
 }
 
 const ProjectMembers: FC<ProjectMembersProps> = ({ projectId, open, onClose }) => {
+  const { user } = useAuth();
   const { data: members, isLoading: membersLoading } = useProjectMembers(projectId);
   const { data: allUsers, isLoading: allUsersLoading } = useAllUsers();
 
@@ -86,6 +89,9 @@ const ProjectMembers: FC<ProjectMembersProps> = ({ projectId, open, onClose }) =
         )}
         locale={{ emptyText: 'У проекта пока нет участников' }}
       />
+      <div style={{ marginTop: 24 }}>
+        <ProjectComments projectId={projectId} currentUserId={user?.id || ''} />
+      </div>
     </Modal>
   );
 };
