@@ -43,13 +43,16 @@ model User {
   defects       Defect[]  @relation("CreatedDefects")
   assigned      Defect[]  @relation("AssignedDefects")
 
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
   projectMemberships ProjectMember[]
-  comments           Comment[]
   attachments        Attachment[]
   auditLogs          AuditLog[]
+
+  authoredComments   Comment[] @relation("AuthorComments")
+  receivedComments   Comment[] @relation("UserComments")
+  projectChanges     ProjectChange[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Project {
@@ -59,6 +62,9 @@ model Project {
   status      ProjectStatus   @default(planned)
   defects     Defect[]
   members     ProjectMember[]
+
+  comments        Comment[]
+  changes         ProjectChange[]
   
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
@@ -71,6 +77,19 @@ model ProjectMember {
   user      User     @relation(fields: [userId], references: [id])
   userId    String
   @@unique([projectId, userId])
+}
+
+model ProjectChange {
+  id          String   @id @default(cuid())
+  projectId   String
+  userId      String
+  field       String
+  oldValue    String?
+  newValue    String?
+  changedAt   DateTime @default(now())
+
+  project     Project  @relation(fields: [projectId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
 }
 
 model Defect {
@@ -111,13 +130,22 @@ model Attachment {
 }
 
 model Comment {
-  id        String   @id @default(uuid())
-  text      String
-  author    User     @relation(fields: [authorId], references: [id])
-  authorId  String
-  defect    Defect   @relation(fields: [defectId], references: [id])
-  defectId  String
-  createdAt DateTime @default(now())
+  id         String   @id @default(uuid())
+  text       String
+
+  author     User     @relation("AuthorComments", fields: [authorId], references: [id])
+  authorId   String
+
+  user       User     @relation("UserComments", fields: [userId], references: [id])
+  userId     String
+
+  defect     Defect?   @relation(fields: [defectId], references: [id])
+  defectId   String?
+
+  project    Project? @relation(fields: [projectId], references: [id])
+  projectId  String?
+
+  createdAt  DateTime @default(now())
 }
 
 model AuditLog {

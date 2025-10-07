@@ -1,49 +1,75 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../prisma';
-import { authMiddleware } from '../middleware/auth';
 
 const router = Router();
 
-router.get('/:defectId/comments', authMiddleware, async (req: Request, res: Response) => {
-   try {
-      const { defectId } = req.params;
+router.get('/project/:projectId', async (req: Request, res: Response) => {
+  const { projectId } = req.params;
 
-      const comments = await prisma.comment.findMany({
-         where: { defectId },
-         include: { author: true },
-         orderBy: { createdAt: 'asc' }
-      });
+  const comments = await prisma.comment.findMany({
+    where: { projectId },
+    include: {
+      author: { select: { id: true, name: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
 
-      res.json(comments);
-   } catch (err) {
-      console.error('GET /comments error', err);
-      res.status(500).json({ message: 'Server error' });
-   }
+  res.json(comments);
 });
 
-router.post('/:defectId/comments', authMiddleware, async (req: Request, res: Response) => {
-   try {
-      const { defectId } = req.params;
-      const { text } = req.body;
-      const userId = req.authUser?.id;
+router.post('/', async (req: Request, res: Response) => {
+  const { projectId, defectId, userId, text, content } = req.body as {
+    projectId?: string;
+    defectId?: string;
+    userId?: string;
+    text?: string;
+    content?: string;
+  };
 
-      if (!userId) return res.status(401).json({ message: 'Unauthorized' });
-      if (!text || !text.trim()) return res.status(400).json({ message: 'Текст комментария обязателен' });
+  const bodyText = typeof text === 'string' && text.trim().length
+    ? text.trim()
+    : typeof content === 'string' && content.trim().length
+      ? content.trim()
+      : null;
 
-      const comment = await prisma.comment.create({
-         data: {
-         text: text.trim(),
-         defectId,
-         authorId: userId
-         },
-         include: { author: true }
-      });
+  if (!bodyText) {
+    return res.status(400).json({ error: 'Text is required (field "text" or "content")' });
+  }
+  if (!userId) {
+    return res.status(400).json({ error: 'userId is required' });
+  }
 
-      res.status(201).json(comment);
-   } catch (err) {
-      console.error('POST /comments error', err);
-      res.status(500).json({ message: 'Server error' });
-   }
+  try {
+    const data: any = {
+      text: bodyText,
+      author: { connect: { id: userId } },
+      user: { connect: { id: userId } },
+    };
+
+    if (projectId) {
+      data.project = { connect: { id: projectId } };
+    }
+    if (defectId) {
+      data.defect = { connect: { id: defectId } };
+    }
+
+    const comment = await prisma.comment.create({
+      data,
+      include: {
+        author: { select: { id: true, name: true } },
+        project: { select: { id: true, name: true } },
+        defect: { select: { id: true, title: true } },
+      },
+    });
+
+    return res.status(201).json(comment);
+  } catch (err) {
+    console.error('Failed to create comment:', err);
+    return res.status(500).json({
+      error: 'Failed to create comment',
+      ...(err instanceof Error ? { details: err.message } : {}),
+    });
+  }
 });
 
 export default router;

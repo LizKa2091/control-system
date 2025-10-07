@@ -21,6 +21,8 @@ app.use('/api/auth', authRouter);
 
 app.use('/api/defects', authMiddleware, defectsRouter, commentsRouter);
 
+app.use('/api/comments', commentsRouter);
+
 app.use('/api/projects', projectRouter);
 
 app.use('/api/users', usersRouter);

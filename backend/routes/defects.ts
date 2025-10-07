@@ -143,7 +143,8 @@ router.post('/:id/comments', authMiddleware, async (req: Request, res: Response)
          data: {
          text,
          defectId: id,
-         authorId: userId!
+         authorId: userId!,
+         userId: userId
          },
          include: { author: true }
       });
