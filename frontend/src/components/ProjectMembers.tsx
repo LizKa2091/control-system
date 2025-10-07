@@ -9,6 +9,7 @@ import {
 } from '../lib/projectMembers';
 import { useAuth } from '../context/useAuth';
 import { ProjectComments } from './ProjectComments';
+import ProjectHistory from './ProjectHistory';
 
 interface ProjectMembersProps {
   projectId: string;
@@ -38,6 +39,7 @@ const ProjectMembers: FC<ProjectMembersProps> = ({ projectId, open, onClose }) =
       onCancel={onClose}
       footer={null}
       destroyOnClose
+      width={800}
     >
       <div style={{ marginBottom: 16 }}>
         {allUsersLoading ? (
@@ -91,6 +93,10 @@ const ProjectMembers: FC<ProjectMembersProps> = ({ projectId, open, onClose }) =
       />
       <div style={{ marginTop: 24 }}>
         <ProjectComments projectId={projectId} currentUserId={user?.id || ''} />
+      </div>
+      <div style={{ marginTop: 24 }}>
+        <h3>История изменений</h3>
+        <ProjectHistory projectId={projectId} />
       </div>
     </Modal>
   );
