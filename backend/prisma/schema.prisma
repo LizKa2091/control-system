@@ -139,8 +139,8 @@ model Comment {
   user       User     @relation("UserComments", fields: [userId], references: [id])
   userId     String
 
-  defect     Defect   @relation(fields: [defectId], references: [id])
-  defectId   String
+  defect     Defect?   @relation(fields: [defectId], references: [id])
+  defectId   String?
 
   project    Project? @relation(fields: [projectId], references: [id])
   projectId  String?
