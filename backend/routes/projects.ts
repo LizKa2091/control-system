@@ -49,14 +49,57 @@ router.get('/:id', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
    const { id } = req.params;
-   const { name, status } = req.body;
+   const { name, status, userId } = req.body;
 
-   const project = await prisma.project.update({
+   if (!userId) {
+      return res.status(400).json({ error: 'userId is required to record project changes' });
+   }
+
+   const oldProject = await prisma.project.findUnique({ where: { id } });
+   if (!oldProject) return res.status(404).json({ error: 'Project not found' });
+
+   const updatedProject = await prisma.project.update({
       where: { id },
-      data: { name, status }
+      data: { name, status },
    });
 
-   res.json(project);
+   const changes: any[] = [];
+   if (oldProject.name !== updatedProject.name) {
+      changes.push({
+         projectId: id,
+         userId,
+         field: 'name',
+         oldValue: oldProject.name,
+         newValue: updatedProject.name,
+      });
+   }
+   if (oldProject.status !== updatedProject.status) {
+      changes.push({
+         projectId: id,
+         userId,
+         field: 'status',
+         oldValue: oldProject.status,
+         newValue: updatedProject.status,
+      });
+   }
+
+   if (changes.length > 0) {
+      await prisma.projectChange.createMany({ data: changes });
+   }
+
+   res.json(updatedProject);
+});
+
+router.get('/:id/history', async (req, res) => {
+   const { id } = req.params;
+   const history = await prisma.projectChange.findMany({
+      where: { projectId: id },
+      orderBy: { changedAt: 'desc' },
+      include: {
+         user: { select: { id: true, name: true, email: true } },
+      },
+   });
+   res.json(history);
 });
 
 router.delete('/:id', async (req, res) => {
