@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './api';
-import axios from 'axios';
 
 export type DefectStatus = 'new' | 'in_progress' | 'review' | 'closed';
 export type DefectPriority = 'low' | 'medium' | 'high';
@@ -115,8 +114,8 @@ export const useAddComment = () => {
          defectId: string;
          text: string;
       }) => {
-         const { data } = await axios.post(
-            `/api/defects/${defectId}/comments`,
+         const { data } = await api.post(
+            `/comments/defects/${defectId}/comments`,
             { text }
          );
          return data;
