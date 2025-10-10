@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import prisma from '../prisma';
+import { authMiddleware } from '../middleware/auth';
 
 const router = Router();
 
@@ -47,9 +48,11 @@ router.get('/:id', async (req, res) => {
    });
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', authMiddleware, async (req, res) => {
    const { id } = req.params;
-   const { name, status, userId } = req.body;
+   const { name, status } = req.body;
+
+   const userId = req.authUser?.id;
 
    if (!userId) {
       return res.status(400).json({ error: 'userId is required to record project changes' });

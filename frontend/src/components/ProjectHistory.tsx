@@ -19,7 +19,7 @@ const ProjectHistory = ({ projectId }: ProjectHistoryProps) => {
     },
     {
       title: 'Дата',
-      dataIndex: 'createdAt',
+      dataIndex: 'changedAt',
       render: (date: string) =>
          new Date(date).toLocaleString('ru-RU', { hour12: false }),
     },
