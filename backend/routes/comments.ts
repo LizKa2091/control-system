@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../prisma';
+import { authMiddleware } from '../middleware/auth';
 
 const router = Router();
 
@@ -16,6 +17,40 @@ router.get('/project/:projectId', async (req: Request, res: Response) => {
 
   res.json(comments);
 });
+
+router.post('/defects/:defectId/comments', authMiddleware, async (req: Request, res: Response) => {
+  const { defectId } = req.params;
+  const { text } = req.body;
+  const userId = req.authUser?.id;
+
+  if (!text?.trim()) {
+    return res.status(400).json({ error: 'Text is required' });
+  }
+  if (!userId) {
+    return res.status(400).json({ error: 'userId is required' });
+  }
+
+  try {
+    const comment = await prisma.comment.create({
+      data: {
+        text: text.trim(),
+        defect: { connect: { id: defectId } },
+        author: { connect: { id: userId } },
+        user: { connect: { id: userId } },
+      },
+      include: {
+        author: { select: { id: true, name: true } },
+        defect: { select: { id: true, title: true } },
+      },
+    });
+
+    return res.status(201).json(comment);
+  } catch (err) {
+    console.error('Failed to create defect comment:', err);
+    return res.status(500).json({ error: 'Failed to create comment' });
+  }
+});
+
 
 router.post('/', async (req: Request, res: Response) => {
   const { projectId, defectId, userId, text, content } = req.body as {

@@ -19,7 +19,7 @@ app.use(cookieParser());
 
 app.use('/api/auth', authRouter);
 
-app.use('/api/defects', authMiddleware, defectsRouter, commentsRouter);
+app.use('/api/defects', authMiddleware, defectsRouter);
 
 app.use('/api/comments', commentsRouter);
 
